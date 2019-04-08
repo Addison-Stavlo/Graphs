@@ -54,10 +54,11 @@ class Graph:
     # If that vertex has not been visited:
         # Mark it as visited
             print(v)
-            visited.add(v)
-        # Add all of its neighbors to the top of the stack
-            for next_vert in self.vertices[v]:
-                s.put(next_vert)
+            if v not in visited:
+                visited.add(v)
+            # Add all of its neighbors to the top of the stack
+                for next_vert in self.vertices[v]:
+                    s.put(next_vert)
 
 #BFS returning shortest path:
 	# Instead of storing each vertex in the queue, store the PATH to that vertex
@@ -81,6 +82,22 @@ class Graph:
                     q.put(new_path)
         return []
 
+    def df_search(self, starting_vertex, target_vertex):
+        s = queue.LifoQueue()
+        s.put([starting_vertex])
+        visited = set()
+        while s.qsize() > 0:
+            path = s.get()
+            v = path[len(path)-1]
+            if v not in visited:
+                visited.add(v)
+                if v == target_vertex:
+                    return path
+                for verts in self.vertices[v]:
+                    new_path = path[:]
+                    new_path.append(verts)
+                    s.put(new_path)
+
 
 graph = Graph()  # Instantiate your graph
 graph.add_vertex('1')
@@ -102,3 +119,4 @@ graph.add_directed_edge('2', '3')
 graph.add_directed_edge('4', '6')
 print(graph.vertices)
 print(graph.bf_search('1','5'))
+print(graph.df_search('1','5'))
