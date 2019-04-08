@@ -97,6 +97,7 @@ class Graph:
                     new_path = path[:]
                     new_path.append(verts)
                     s.put(new_path)
+        return []
 
 
 graph = Graph()  # Instantiate your graph
