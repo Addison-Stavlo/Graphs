@@ -109,24 +109,22 @@ class SocialGraph:
         visited = {}
         while q.qsize() > 0:
             path = q.get()
-            v = path[-1]
-            if v not in visited:
-                visited[v] = path
-                for verts in self.friendships[v]:
-                    new_path = path[:]
-                    new_path.append(verts)
+            extended_friend = path[-1]
+            if extended_friend not in visited:
+                visited[extended_friend] = path
+                for more_friends in self.friendships[extended_friend]:
+                    new_path = path[:] + [more_friends]
+                    # new_path.append(more_friends)
                     q.put(new_path) 
         return visited
 
 
 if __name__ == '__main__':
     sg = SocialGraph()
-    sg.populateGraph_On(10, 2)
+    sg.populateGraph_On(1000, 5)
     print(sg.friendships)
     connections = sg.getAllSocialPaths(1)
     print(connections)
-    # other_connections = sg.getAllPaths(1)
-    # print(other_connections)
 
 # 1. To create 100 users with an average of 10 friends each,
 #  how many times would you need to call `addFriendship()`? Why?
