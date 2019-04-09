@@ -86,24 +86,6 @@ class SocialGraph:
         # addFriendship will fail very often creating
         # an almost endless loop of addFriendship
 
-    def bf_search(self, starting_vertex, target_vertex):
-        # Create and empty queue
-        q = queue.Queue()
-        q.put([starting_vertex])
-        visited = set()
-        while q.qsize() > 0:
-            path = q.get()
-            v = path[len(path)-1]
-            if v not in visited:
-                visited.add(v)
-                if v == target_vertex:
-                    return path
-                for verts in self.friendships[v]:
-                    new_path = path[:]
-                    new_path.append(verts)
-                    q.put(new_path)
-        return []
-
     def getAllSocialPaths(self, userID):
         """
         Takes a user's userID as an argument
@@ -113,22 +95,38 @@ class SocialGraph:
 
         The key is the friend's ID and the value is the path.
         """
-        visited = {}  # Note that this is a dictionary, not a set
-        # !!!! IMPLEMENT ME
-        for user in self.users:
-            path_to_friend = self.bf_search(userID, user)
-            if len(path_to_friend) > 0:
-                visited[user] = path_to_friend
-
+        # visited = {}  # Note that this is a dictionary, not a set
+        # # !!!! IMPLEMENT ME
+        ## --start slow inefficient implementation
+        # for user in self.users:
+        #     path_to_friend = self.bf_search(userID, user)
+        #     if len(path_to_friend) > 0:
+        #         visited[user] = path_to_friend
+        # return visited
+        ## --end slow inefficient implementation
+        q = queue.Queue()
+        q.put([userID])   
+        visited = {}
+        while q.qsize() > 0:
+            path = q.get()
+            v = path[-1]
+            if v not in visited:
+                visited[v] = path
+                for verts in self.friendships[v]:
+                    new_path = path[:]
+                    new_path.append(verts)
+                    q.put(new_path) 
         return visited
 
 
 if __name__ == '__main__':
     sg = SocialGraph()
-    sg.populateGraph(10, 2)
+    sg.populateGraph_On(10, 2)
     print(sg.friendships)
     connections = sg.getAllSocialPaths(1)
     print(connections)
+    # other_connections = sg.getAllPaths(1)
+    # print(other_connections)
 
 # 1. To create 100 users with an average of 10 friends each,
 #  how many times would you need to call `addFriendship()`? Why?
