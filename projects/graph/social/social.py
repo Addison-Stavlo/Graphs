@@ -17,11 +17,14 @@ class SocialGraph:
         """
         if userID == friendID:
             print("WARNING: You cannot be friends with yourself")
+            return False
         elif friendID in self.friendships[userID] or userID in self.friendships[friendID]:
             print("WARNING: Friendship already exists")
+            return False
         else:
             self.friendships[userID].add(friendID)
             self.friendships[friendID].add(userID)
+            return True
 
     def addUser(self, name):
         """
@@ -62,6 +65,26 @@ class SocialGraph:
         for i in range(numUsers * avgFriendships // 2):
             friendship = friendships[i]
             self.addFriendship(friendship[0],friendship[1])
+
+    def populateGraph_On(self, numUsers, avgFriendships):
+        self.lastID = 0
+        self.users = {}
+        self.friendships = {}
+                # Add users
+        for i in range(numUsers):
+            self.addUser(f'User{i}')
+        # Create friendships
+        # friendships = []
+        i = 0
+        while i <= numUsers*avgFriendships // 2:
+            user = random.randint(1,numUsers)
+            friend = random.randint(1,numUsers)
+            if self.addFriendship(user, friend):
+                i += 1
+        # the above O(n) implementation will break down
+        # as avgFrienships approaches numUsers
+        # addFriendship will fail very often creating
+        # an almost endless loop of addFriendship
 
     def bf_search(self, starting_vertex, target_vertex):
         # Create and empty queue
@@ -107,3 +130,13 @@ if __name__ == '__main__':
     connections = sg.getAllSocialPaths(1)
     print(connections)
 
+# 1. To create 100 users with an average of 10 friends each,
+#  how many times would you need to call `addFriendship()`? Why?
+#  - 50 times, b/c friendships are a 2-way link
+
+#  2. If you create 1000 users with an average of 5 random friends
+#   each, what percentage of other users will be in a particular 
+#   user's extended social network? What is the average degree of 
+#   separation between a user and those in his/her extended network?
+#  - 99% of users will be in each others extended network
+#  - with an average of 5 levels of separation
