@@ -1,4 +1,5 @@
 import random
+import queue
 
 class User:
     def __init__(self, name):
@@ -62,6 +63,23 @@ class SocialGraph:
             friendship = friendships[i]
             self.addFriendship(friendship[0],friendship[1])
 
+    def bf_search(self, starting_vertex, target_vertex):
+        # Create and empty queue
+        q = queue.Queue()
+        q.put([starting_vertex])
+        visited = set()
+        while q.qsize() > 0:
+            path = q.get()
+            v = path[len(path)-1]
+            if v not in visited:
+                visited.add(v)
+                if v == target_vertex:
+                    return path
+                for verts in self.friendships[v]:
+                    new_path = path[:]
+                    new_path.append(verts)
+                    q.put(new_path)
+        return []
 
     def getAllSocialPaths(self, userID):
         """
@@ -74,17 +92,18 @@ class SocialGraph:
         """
         visited = {}  # Note that this is a dictionary, not a set
         # !!!! IMPLEMENT ME
+        for user in self.users:
+            path_to_friend = self.bf_search(userID, user)
+            if len(path_to_friend) > 0:
+                visited[user] = path_to_friend
+
         return visited
 
 
-# if __name__ == '__main__':
-#     sg = SocialGraph()
-#     sg.populateGraph(10, 2)
-#     print(sg.friendships)
-#     connections = sg.getAllSocialPaths(1)
-#     print(connections)
+if __name__ == '__main__':
+    sg = SocialGraph()
+    sg.populateGraph(10, 2)
+    print(sg.friendships)
+    connections = sg.getAllSocialPaths(1)
+    print(connections)
 
-
-sg = SocialGraph()
-sg.populateGraph(10, 9)
-print(sg.friendships)
