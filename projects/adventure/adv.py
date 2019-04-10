@@ -24,8 +24,6 @@ world.loadGraph(roomGraph)
 traversalPath = []
 
 player = Player("Name", world.startingRoom)
-print('room: ' + str(player.currentRoom.id))
-print(f'directions: {player.currentRoom.getExits()}')
 
 def opposite_dir(d):
     if d == 'n':
@@ -37,99 +35,86 @@ def opposite_dir(d):
     elif d == 'w':
         return 'e'
 
+def traverse_world():
 
+    # breadth first search function to backtrack along traversalGraph
+    def bf_backtrack(current_room_id, target_room_id):
+        q = queue.Queue()
+        q.put([{"room": current_room_id, "direction": None}])
+        visited = set()
+        while q.qsize() > 0:
+            path = q.get()
+            room = path[-1]['room']
+            if room not in visited:
+                visited.add(room)
+                if room == target_room_id:
+                    return path
+                for adj_rooms in traversalGraph[room]:
+                    if traversalGraph[room][adj_rooms] != '?':
+                        new_path = path[:] + [{"room": traversalGraph[room][adj_rooms], "direction": adj_rooms}]
+                        q.put(new_path)
 
-traversalGraph = {}
+    # helper function to initiate a room in the traversal graph
+    def initiateRoom():
+        traversalGraph[player.currentRoom.id] = {}
+        for dirs in player.currentRoom.getExits():
+            traversalGraph[player.currentRoom.id][dirs] = '?'
 
-def bf_backtrack(current_room_id, target_room_id):
-    q = queue.Queue()
-    q.put([{"room": current_room_id, "direction": None}])
-    visited = set()
-    while q.qsize() > 0:
-        path = q.get()
-        room = path[-1]['room']
-        if room not in visited:
-            visited.add(room)
-            if room == target_room_id:
-                return path
-
-            for adj_rooms in traversalGraph[room]:
-                if traversalGraph[room][adj_rooms] != '?':
-                    new_path = path[:] + [{"room": traversalGraph[room][adj_rooms], "direction": adj_rooms}]
-                    q.put(new_path)
-
-
-last_unknowns = queue.LifoQueue()
-# add room to traversal graph
-def initiateRoom():
-    traversalGraph[player.currentRoom.id] = {}
-    for dirs in player.currentRoom.getExits():
-        traversalGraph[player.currentRoom.id][dirs] = '?'
-
-initiateRoom()
-
-while True:
-    # try to find new move from current room
-    for dirs in traversalGraph[player.currentRoom.id]:
-        if traversalGraph[player.currentRoom.id][dirs] == '?':
-            old_room = player.currentRoom.id
-            player.travel(dirs)
-            #add movement to path log
-            traversalPath.append(dirs)
-            
-            # havent been to this room?
-            if player.currentRoom.id not in traversalGraph:
-                # initiate it in traversalGraph
-                initiateRoom()
-            # update connects in traversal graph
-            traversalGraph[old_room][dirs] = player.currentRoom.id
-            traversalGraph[player.currentRoom.id][opposite_dir(dirs)] = old_room
-            # check if any other paths in old room are ?
-            for dirs in traversalGraph[old_room]:
-                if traversalGraph[old_room][dirs] == '?':
-                    # add to stack for later
-                    last_unknowns.put(old_room)
-            break
-
-    # no new moves from current room
-    # move to closest room we know has new moves
-    else:
-        # if we didnt have any new moves from current room (being in this block)
-        # and we dont have anything in the stack, we break while loop
-        if last_unknowns.qsize() == 0:
-            break
-        # all directions have been explored, find nearest ? to go to
-        nearest_unknown = last_unknowns.get()
-        # get path to this room with BFS from current room
-        path = bf_backtrack(player.currentRoom.id, nearest_unknown)
-        # execute path
-        for steps in path:
-            if steps['direction']:
-                player.travel(steps['direction'])
-                traversalPath.append(steps['direction'])
-
-# print('room: ' + str(player.currentRoom.id))
-# print(f'directions: {player.currentRoom.getExits()}')
-
-print(traversalPath)
-
-
-
-
-
-
+    # to keep track of where we have been and what we have found
+    traversalGraph = {}
+    # Stack for knowing where my last/closest unexplored direction was
+    last_unknowns = queue.LifoQueue()
+    # initiate our starting room
+    initiateRoom()
+    # right now, our Q is empty, we will start the loop with TRUE and use BREAK statement later
+    while True:
+        # try to find new move from current room
+        for dirs in traversalGraph[player.currentRoom.id]:
+            if traversalGraph[player.currentRoom.id][dirs] == '?':
+                old_room = player.currentRoom.id
+                player.travel(dirs)
+                #add movement to path log
+                traversalPath.append(dirs)
+                
+                # havent been to this room?
+                if player.currentRoom.id not in traversalGraph:
+                    # initiate it in traversalGraph
+                    initiateRoom()
+                # update connects in traversal graph
+                traversalGraph[old_room][dirs] = player.currentRoom.id
+                traversalGraph[player.currentRoom.id][opposite_dir(dirs)] = old_room
+                # check if any other paths in old room are ?
+                for dirs in traversalGraph[old_room]:
+                    if traversalGraph[old_room][dirs] == '?':
+                        # add to stack for later
+                        last_unknowns.put(old_room)
+                break
+        # no new moves from current room
+        # move to closest room we know has new moves
+        else:
+            # if we didnt have any new moves from current room (being in this block)
+            # and we dont have anything in the stack, we break while loop
+            if last_unknowns.qsize() == 0:
+                break
+            # all directions have been explored, find nearest ? to go to
+            nearest_unknown = last_unknowns.get()
+            # get path to this room with BFS from current room
+            path = bf_backtrack(player.currentRoom.id, nearest_unknown)
+            # execute path
+            for steps in path:
+                if steps['direction']:
+                    player.travel(steps['direction'])
+                    traversalPath.append(steps['direction'])
 
 
 # TRAVERSAL TEST
+traverse_world()
 visited_rooms = set()
 player.currentRoom = world.startingRoom
 visited_rooms.add(player.currentRoom)
 for move in traversalPath:
     player.travel(move)
     visited_rooms.add(player.currentRoom)
-
-
-
 if len(visited_rooms) == len(roomGraph):
     print(f"TESTS PASSED: {len(traversalPath)} moves, {len(visited_rooms)} rooms visited")
 else:
