@@ -26,9 +26,6 @@ traversalPath = []
 player = Player("Name", world.startingRoom)
 print('room: ' + str(player.currentRoom.id))
 print(f'directions: {player.currentRoom.getExits()}')
-# player.travel('n')
-# print('room: ' + str(player.currentRoom.id))
-# print(f'directions: {player.currentRoom.getExits()}')
 
 def opposite_dir(d):
     if d == 'n':
@@ -40,7 +37,28 @@ def opposite_dir(d):
     elif d == 'w':
         return 'e'
 
+
+
 traversalGraph = {}
+
+def bf_backtrack(current_room_id, target_room_id):
+    q = queue.Queue()
+    q.put([{"room": current_room_id, "direction": None}])
+    visited = set()
+    while q.qsize() > 0:
+        path = q.get()
+        room = path[-1]['room']
+        if room not in visited:
+            visited.add(room)
+            if room == target_room_id:
+                return path
+
+            for adj_rooms in traversalGraph[room]:
+                if traversalGraph[room][adj_rooms] != '?':
+                    new_path = path[:] + [{"room": traversalGraph[room][adj_rooms], "direction": adj_rooms}]
+                    q.put(new_path)
+
+
 last_unknowns = queue.LifoQueue()
 # add room to traversal graph
 def initiateRoom():
@@ -51,7 +69,6 @@ def initiateRoom():
 initiateRoom()
 
 while True:
-    print('hiya')
     # try to find new move from current room
     for dirs in traversalGraph[player.currentRoom.id]:
         if traversalGraph[player.currentRoom.id][dirs] == '?':
@@ -79,17 +96,22 @@ while True:
     else:
         # if we didnt have any new moves from current room (being in this block)
         # and we dont have anything in the stack, we break while loop
-        if last_unknowns.qsize() == 1:
+        if last_unknowns.qsize() == 0:
             break
         # all directions have been explored, find nearest ? to go to
         nearest_unknown = last_unknowns.get()
         # get path to this room with BFS from current room
+        path = bf_backtrack(player.currentRoom.id, nearest_unknown)
         # execute path
+        for steps in path:
+            if steps['direction']:
+                player.travel(steps['direction'])
+                traversalPath.append(steps['direction'])
 
-print('room: ' + str(player.currentRoom.id))
-print(f'directions: {player.currentRoom.getExits()}')
+# print('room: ' + str(player.currentRoom.id))
+# print(f'directions: {player.currentRoom.getExits()}')
 
-print(traversalGraph)
+print(traversalPath)
 
 
 
@@ -115,7 +137,6 @@ else:
     print(f"{len(roomGraph) - len(visited_rooms)} unvisited rooms")
 
 
-print(world.rooms[4].s_to)
 #######
 # UNCOMMENT TO WALK AROUND
 #######
