@@ -60,14 +60,31 @@ def traverse_world():
         for dirs in player.currentRoom.getExits():
             traversalGraph[player.currentRoom.id][dirs] = '?'
 
+    def filter_room_queue():
+        # if we accidently moved back into a room in our last unknowns queue, we must remove it
+        # since these are queues there isnt an easy way to index,
+        # so we remove by filtering the items into a placeholder stack and back over
+        for i in range(last_unknowns.qsize()):
+            item = last_unknowns.get()
+            if item != player.currentRoom.id:
+                placeholder_q.put(item)
+        for i in range(placeholder_q.qsize()):
+            item = placeholder_q.get()
+            last_unknowns.put(item)
+
     # to keep track of where we have been and what we have found
     traversalGraph = {}
     # Stack for knowing where my last/closest unexplored direction was
     last_unknowns = queue.LifoQueue()
+    # a placeholder stack for filtering through last_unknowns to avoid running duplicates
+    placeholder_q = queue.LifoQueue()
     # initiate our starting room
     initiateRoom()
     # right now, our Q is empty, we will start the loop with TRUE and use BREAK statement later
     while True:
+
+        filter_room_queue()
+            
         # try to find new move from current room
         for dirs in traversalGraph[player.currentRoom.id]:
             if traversalGraph[player.currentRoom.id][dirs] == '?':
