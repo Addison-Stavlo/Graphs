@@ -72,6 +72,8 @@ def traverse_world():
             item = placeholder_q.get()
             last_unknowns.put(item)
 
+    global traversalPath
+    traversalPath = []
     # to keep track of where we have been and what we have found
     traversalGraph = {}
     # Stack for knowing where my last/closest unexplored direction was
@@ -85,28 +87,33 @@ def traverse_world():
         
         # cuts 1000 moves down to 994
         filter_room_queue()
-            
-        # try to find new move from current room
+        
+        # create list of available paths
+        paths = []
         for dirs in traversalGraph[player.currentRoom.id]:
             if traversalGraph[player.currentRoom.id][dirs] == '?':
-                old_room = player.currentRoom.id
-                player.travel(dirs)
-                #add movement to path log
-                traversalPath.append(dirs)
-                
-                # havent been to this room?
-                if player.currentRoom.id not in traversalGraph:
-                    # initiate it in traversalGraph
-                    initiateRoom()
-                # update connects in traversal graph
-                traversalGraph[old_room][dirs] = player.currentRoom.id
-                traversalGraph[player.currentRoom.id][opposite_dir(dirs)] = old_room
-                # check if any other paths in old room are ?
-                for dirs in traversalGraph[old_room]:
-                    if traversalGraph[old_room][dirs] == '?':
-                        # add to stack for later
-                        last_unknowns.put(old_room)
-                break
+                paths.append(dirs)
+
+        if len(paths) > 0:
+            # pick a random path available
+            dirs = paths[random.randint(0,len(paths)-1)]
+            old_room = player.currentRoom.id
+            player.travel(dirs)
+            #add movement to path log
+            traversalPath.append(dirs)
+            
+            # havent been to this room?
+            if player.currentRoom.id not in traversalGraph:
+                # initiate it in traversalGraph
+                initiateRoom()
+            # update connects in traversal graph
+            traversalGraph[old_room][dirs] = player.currentRoom.id
+            traversalGraph[player.currentRoom.id][opposite_dir(dirs)] = old_room
+            # check if any other paths in old room are ?
+            for dirs in traversalGraph[old_room]:
+                if traversalGraph[old_room][dirs] == '?':
+                    # add to stack for later
+                    last_unknowns.put(old_room)
         # no new moves from current room
         # move to closest room we know has new moves
         else:
@@ -123,21 +130,30 @@ def traverse_world():
                 if steps['direction']:
                     player.travel(steps['direction'])
                     traversalPath.append(steps['direction'])
+    return len(traversalPath)
 
+length = 10
+steps = [None]*length
+i = 0
+while i < length:
+    steps[i] = traverse_world()
+    print(f'run # {i+1} out of {length}')
+    i += 1
 
+print(min(steps))
 # TRAVERSAL TEST
-traverse_world()
-visited_rooms = set()
-player.currentRoom = world.startingRoom
-visited_rooms.add(player.currentRoom)
-for move in traversalPath:
-    player.travel(move)
-    visited_rooms.add(player.currentRoom)
-if len(visited_rooms) == len(roomGraph):
-    print(f"TESTS PASSED: {len(traversalPath)} moves, {len(visited_rooms)} rooms visited")
-else:
-    print("TESTS FAILED: INCOMPLETE TRAVERSAL")
-    print(f"{len(roomGraph) - len(visited_rooms)} unvisited rooms")
+# traverse_world()
+# visited_rooms = set()
+# player.currentRoom = world.startingRoom
+# visited_rooms.add(player.currentRoom)
+# for move in traversalPath:
+#     player.travel(move)
+#     visited_rooms.add(player.currentRoom)
+# if len(visited_rooms) == len(roomGraph):
+#     print(f"TESTS PASSED: {len(traversalPath)} moves, {len(visited_rooms)} rooms visited")
+# else:
+#     print("TESTS FAILED: INCOMPLETE TRAVERSAL")
+#     print(f"{len(roomGraph) - len(visited_rooms)} unvisited rooms")
 
 
 #######
