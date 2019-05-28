@@ -1,4 +1,5 @@
-
+import random
+import queue
 
 class User:
     def __init__(self, name):
@@ -16,11 +17,14 @@ class SocialGraph:
         """
         if userID == friendID:
             print("WARNING: You cannot be friends with yourself")
+            return False
         elif friendID in self.friendships[userID] or userID in self.friendships[friendID]:
             print("WARNING: Friendship already exists")
+            return False
         else:
             self.friendships[userID].add(friendID)
             self.friendships[friendID].add(userID)
+            return True
 
     def addUser(self, name):
         """
@@ -47,8 +51,40 @@ class SocialGraph:
         # !!!! IMPLEMENT ME
 
         # Add users
-
+        for i in range(numUsers):
+            self.addUser(f'User{i}')
         # Create friendships
+        friendships = []
+        for user in self.users:
+            # friendship is a 2-way connection, avoid duplicates this way
+            for friend in range(user + 1, self.lastID + 1):
+                friendships.append((user, friend))
+        random.shuffle(friendships)
+
+        # add the randomized friendships, divide by 2 since friendship is 2-ways
+        for i in range(numUsers * avgFriendships // 2):
+            friendship = friendships[i]
+            self.addFriendship(friendship[0],friendship[1])
+
+    def populateGraph_On(self, numUsers, avgFriendships):
+        self.lastID = 0
+        self.users = {}
+        self.friendships = {}
+                # Add users
+        for i in range(numUsers):
+            self.addUser(f'User{i}')
+        # Create friendships
+        # friendships = []
+        i = 0
+        while i <= numUsers*avgFriendships // 2:
+            user = random.randint(1,numUsers)
+            friend = random.randint(1,numUsers)
+            if self.addFriendship(user, friend):
+                i += 1
+        # the above O(n) implementation will break down
+        # as avgFrienships approaches numUsers
+        # addFriendship will fail very often creating
+        # an almost endless loop of addFriendship
 
     def getAllSocialPaths(self, userID):
         """
@@ -59,14 +95,44 @@ class SocialGraph:
 
         The key is the friend's ID and the value is the path.
         """
-        visited = {}  # Note that this is a dictionary, not a set
-        # !!!! IMPLEMENT ME
+        # visited = {}  # Note that this is a dictionary, not a set
+        # # !!!! IMPLEMENT ME
+        ## --start slow inefficient implementation
+        # for user in self.users:
+        #     path_to_friend = self.bf_search(userID, user)
+        #     if len(path_to_friend) > 0:
+        #         visited[user] = path_to_friend
+        # return visited
+        ## --end slow inefficient implementation
+        q = queue.Queue()
+        q.put([userID])   
+        visited = {}
+        while q.qsize() > 0:
+            path = q.get()
+            extended_friend = path[-1]
+            if extended_friend not in visited:
+                visited[extended_friend] = path
+                for more_friends in self.friendships[extended_friend]:
+                    new_path = path[:] + [more_friends]
+                    # new_path.append(more_friends)
+                    q.put(new_path) 
         return visited
 
 
 if __name__ == '__main__':
     sg = SocialGraph()
-    sg.populateGraph(10, 2)
+    sg.populateGraph_On(1000, 5)
     print(sg.friendships)
     connections = sg.getAllSocialPaths(1)
     print(connections)
+
+# 1. To create 100 users with an average of 10 friends each,
+#  how many times would you need to call `addFriendship()`? Why?
+#  - 50 times, b/c friendships are a 2-way link
+
+#  2. If you create 1000 users with an average of 5 random friends
+#   each, what percentage of other users will be in a particular 
+#   user's extended social network? What is the average degree of 
+#   separation between a user and those in his/her extended network?
+#  - 99% of users will be in each others extended network
+#  - with an average of 5 levels of separation
