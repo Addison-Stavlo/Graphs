@@ -72,6 +72,8 @@ def traverse_world():
             item = placeholder_q.get()
             last_unknowns.put(item)
 
+    global traversalPath
+    traversalPath = []
     # to keep track of where we have been and what we have found
     traversalGraph = {}
     # Stack for knowing where my last/closest unexplored direction was
@@ -85,28 +87,35 @@ def traverse_world():
         
         # cuts 1000 moves down to 994
         filter_room_queue()
-            
-        # try to find new move from current room
+        
+        # create list of available paths
+        paths = []
         for dirs in traversalGraph[player.currentRoom.id]:
             if traversalGraph[player.currentRoom.id][dirs] == '?':
-                old_room = player.currentRoom.id
-                player.travel(dirs)
-                #add movement to path log
-                traversalPath.append(dirs)
-                
-                # havent been to this room?
-                if player.currentRoom.id not in traversalGraph:
-                    # initiate it in traversalGraph
-                    initiateRoom()
-                # update connects in traversal graph
-                traversalGraph[old_room][dirs] = player.currentRoom.id
-                traversalGraph[player.currentRoom.id][opposite_dir(dirs)] = old_room
-                # check if any other paths in old room are ?
-                for dirs in traversalGraph[old_room]:
-                    if traversalGraph[old_room][dirs] == '?':
-                        # add to stack for later
-                        last_unknowns.put(old_room)
-                break
+                paths.append(dirs)
+
+        # pick a path to move
+        if len(paths) > 0:
+            # sort them, play with how you sort it to find lowest run
+            paths.sort(reverse = True)
+            dirs = paths[0]
+            old_room = player.currentRoom.id
+            player.travel(dirs)
+            #add movement to path log
+            traversalPath.append(dirs)
+            
+            # havent been to this room?
+            if player.currentRoom.id not in traversalGraph:
+                # initiate it in traversalGraph
+                initiateRoom()
+            # update connects in traversal graph
+            traversalGraph[old_room][dirs] = player.currentRoom.id
+            traversalGraph[player.currentRoom.id][opposite_dir(dirs)] = old_room
+            # check if any other paths in old room are ?
+            for dirs in traversalGraph[old_room]:
+                if traversalGraph[old_room][dirs] == '?':
+                    # add to stack for later
+                    last_unknowns.put(old_room)
         # no new moves from current room
         # move to closest room we know has new moves
         else:
@@ -123,7 +132,7 @@ def traverse_world():
                 if steps['direction']:
                     player.travel(steps['direction'])
                     traversalPath.append(steps['direction'])
-
+    return len(traversalPath)
 
 # TRAVERSAL TEST
 traverse_world()
